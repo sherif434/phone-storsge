@@ -46,7 +46,7 @@
 
 1. ارفع ملفات المشروع إلى مستودع GitHub.
 2. افتح Settings → Pages، واختر **GitHub Actions** كمصدر للنشر.
-3. أضف إعداد العميل في ملف `firebase-config.js` محليًا ثم قرر طريقة تزويده أثناء النشر. الأفضل إعداد workflow يستقبل القيم من GitHub Actions Secrets/Variables وينشئ الملف أثناء البناء. لا توجد عملية نشر تلقائية مفعّلة في هذا المستودع قبل مراجعة الإعدادات.
+3. افتح Settings → Secrets and variables → Actions في المستودع، وأنشئ الأسرار الستة المذكورة أعلاه باستخدام قيم Web App من Firebase Console. هذه قيم إعداد عميل تُرسل إلى المتصفح عند النشر؛ لا تضع أي أسرار إدارية فيها. لا تحفظ service-account JSON أو Admin SDK secrets في GitHub Pages.
 4. بعد نجاح GitHub Actions سيظهر رابط الموقع في Settings → Pages.
 
 GitHub Pages استضافة ثابتة؛ لا تنفذ وظائف خادمية لحساب الحصص أو حذف الحسابات. لا يمكن للواجهة وحدها ضمان أن المستخدم لم يتجاوز الحصة.
