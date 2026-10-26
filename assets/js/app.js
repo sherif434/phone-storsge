@@ -250,17 +250,23 @@ async function signup(event) {
   const button = $("#signup-submit"), email = $("#signup-email").value.trim();
   if (!safeEmail(email)) return toast("أدخل بريدًا إلكترونيًا صحيحًا.", "error");
   const password = generateStrongPassword(20);
+  pendingPassword = password; // Keep the one-time password visible while auth state changes.
   setBusy(button, true, "جارٍ إنشاء الحساب...");
   try {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    pendingPassword = password;
     $("#generated-password").value = password;
     $("#generated-password-box").classList.remove("hidden");
     $("#signup-form").classList.add("hidden");
+    showView("signup");
     toast("تم إنشاء الحساب. انسخ كلمة المرور واحفظها قبل المتابعة.", "success");
-    // Firebase Authentication stores the credential securely; no password is written to Firestore/localStorage/console.
-    await setDoc(doc(db, "users", credential.user.uid), { email: credential.user.email, createdAt: serverTimestamp() });
+    try {
+      await setDoc(doc(db, "users", credential.user.uid), { email: credential.user.email, createdAt: serverTimestamp() });
+    } catch (profileError) {
+      console.error("Profile initialization failed:", profileError.code || "unknown");
+      toast("تم إنشاء حساب المصادقة، لكن تعذرت تهيئة بيانات الملف الشخصي. راجع قواعد Firestore.", "error");
+    }
   } catch (error) {
+    pendingPassword = null;
     toast(friendlyError(error), "error");
   } finally { setBusy(button, false); }
 }
@@ -324,7 +330,7 @@ function initEvents() {
     $("#generated-password").value = "";
     $("#generated-password-box").classList.add("hidden");
     toast("احفظ كلمة المرور في مكان آمن. يمكنك الآن استخدام حسابك.", "info");
-    if (currentUser) showView("dashboard");
+    if (currentUser) { showView("dashboard"); watchFiles(currentUser); }
   });
   $("#delete-account-button").addEventListener("click", () => toast("حذف الحساب مع تنظيف الملفات يحتاج وظيفة خادمية آمنة، لذلك الخيار غير متاح حاليًا.", "info"));
   window.addEventListener("online", updateConnection);
@@ -341,6 +347,10 @@ function start() {
     initEvents(); updateConnection();
     onAuthStateChanged(auth, user => {
       currentUser = user;
+      if (user && pendingPassword) {
+        showView("signup");
+        return;
+      }
       if (user) {
         $("#user-email-display").textContent = user.email || "حساب غمزونة";
         $("#user-avatar").textContent = (user.email || "غ").charAt(0).toLocaleUpperCase("ar-EG");
